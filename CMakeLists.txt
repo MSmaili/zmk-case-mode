@@ -1,0 +1,1 @@
+target_sources_ifdef(CONFIG_ZMK_BEHAVIOR_CASE_MODE app PRIVATE src/behaviors/behavior_case_mode.c)
