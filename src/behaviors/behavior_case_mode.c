@@ -112,6 +112,12 @@ static bool case_mode_is_space(uint16_t usage_page, uint8_t keycode) {
     return usage_page == HID_USAGE_KEY && keycode == HID_USAGE_KEY_KEYBOARD_SPACEBAR;
 }
 
+static bool case_mode_has_shortcut_mods(uint8_t implicit_modifiers) {
+    uint8_t mods = implicit_modifiers | zmk_hid_get_explicit_mods();
+
+    return (mods & (MOD_LCTL | MOD_RCTL | MOD_LALT | MOD_RALT | MOD_LGUI | MOD_RGUI)) != 0;
+}
+
 static bool case_mode_is_in_continue_list(const struct behavior_case_mode_config *config,
                                           uint16_t usage_page, uint8_t usage_id,
                                           uint8_t implicit_modifiers) {
@@ -146,6 +152,11 @@ static int case_mode_keycode_state_changed_listener(const zmk_event_t *eh) {
         const struct behavior_case_mode_config *config = dev->config;
 
         if (is_mod(ev->usage_page, ev->keycode)) {
+            continue;
+        }
+
+        // Treat Ctrl/Alt/Gui chords as shortcuts, not text transforms.
+        if (case_mode_has_shortcut_mods(ev->implicit_modifiers)) {
             continue;
         }
 
