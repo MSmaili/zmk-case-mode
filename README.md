@@ -1,6 +1,8 @@
 # ZMK Case Mode
 
-`zmk-behavior-case-mode` is a small ZMK module for toggled typing modes that rewrite `space` while active:
+`zmk-behavior-case-mode` is a small ZMK module that makes it easier to type names like `snake_case`, `camelCase`, and `kebab-case` on compact keyboards.
+
+When a case mode is active, pressing `space` changes how the next word boundary is typed.
 
 - `snake_case`
 - `camelCase`
@@ -10,13 +12,13 @@
 
 - Rewrites `space` into `_` for snake case
 - Rewrites `space` into `-` for kebab case
-- Suppresses `space` and shifts the next alpha key for camel case
+- Suppresses `space` and shifts the next letter key for camel case
 - Lets you keep the mode active for selected extra keys via `continue-list`
 - Ensures only one case mode instance is active at a time
 
 ## Install
 
-Add the module to your ZMK config manifest.
+Add the module to your ZMK config manifest, usually in `config/west.yml` or your top-level `west.yml`.
 
 ```yaml
 manifest:
@@ -31,7 +33,9 @@ manifest:
 
 ## Usage
 
-Define one or more behavior instances in your own config, for example in a `case_modes.dtsi` file:
+Define one or more behavior instances in your own config, for example in `config/case_modes.dtsi`.
+
+Then include that file from your keymap or shared include file.
 
 ```dts
 #define CASE_MODE_SNAKE 0
@@ -64,6 +68,12 @@ Define one or more behavior instances in your own config, for example in a `case
 };
 ```
 
+Example include:
+
+```dts
+#include "case_modes.dtsi"
+```
+
 Then bind them however you want, for example through combos:
 
 ```dts
@@ -77,10 +87,7 @@ combo_snake_case {
 
 ## Properties
 
-- `mode`: required integer enum
-  - `0`: snake
-  - `1`: camel
-  - `2`: kebab
+- `mode`: required integer enum (`0` = snake, `1` = camel, `2` = kebab)
 - `continue-list`: optional list of extra keycodes that should not deactivate the mode
 
 Alphanumeric keys are always allowed to continue the mode.
