@@ -21,12 +21,6 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
 
-enum case_mode_type {
-    CASE_MODE_SNAKE,
-    CASE_MODE_CAMEL,
-    CASE_MODE_KEBAB,
-};
-
 struct case_mode_continue_item {
     uint16_t page;
     uint32_t id;
@@ -34,7 +28,12 @@ struct case_mode_continue_item {
 };
 
 struct behavior_case_mode_config {
-    enum case_mode_type mode;
+    uint8_t delimiter_keycode;
+    uint8_t delimiter_mods;
+    bool emit_delimiter;
+    bool capitalize_words;
+    bool capitalize_first;
+    bool capitalize_all;
     uint8_t continuations_count;
     struct case_mode_continue_item continuations[];
 };
@@ -55,6 +54,8 @@ static void deactivate_case_mode(const struct device *dev) {
 }
 
 static void activate_case_mode(const struct device *dev) {
+    const struct behavior_case_mode_config *config = dev->config;
+
     for (int i = 0; i < ARRAY_SIZE(devs); i++) {
         deactivate_case_mode(devs[i]);
     }
@@ -62,7 +63,7 @@ static void activate_case_mode(const struct device *dev) {
     struct behavior_case_mode_data *data = dev->data;
 
     data->active = true;
-    data->shift_next = false;
+    data->shift_next = config->capitalize_first;
 }
 
 static int on_case_mode_binding_pressed(struct zmk_behavior_binding *binding,
@@ -149,51 +150,46 @@ static int case_mode_keycode_state_changed_listener(const zmk_event_t *eh) {
             continue;
         }
 
-        // Treat Ctrl/Alt/Gui chords as shortcuts, not text transforms.
         if (case_mode_has_shortcut_mods(ev->implicit_modifiers)) {
             continue;
         }
 
-        // Rewrite both press and release so the host sees a matched key pair.
+        // Space → delimiter handling
         if (case_mode_is_space(ev->usage_page, ev->keycode)) {
-            switch (config->mode) {
-            case CASE_MODE_SNAKE:
-                ev->keycode = HID_USAGE_KEY_KEYBOARD_MINUS_AND_UNDERSCORE;
-                ev->implicit_modifiers |= MOD_LSFT;
-                break;
-            case CASE_MODE_CAMEL:
-                if (ev->state) {
+            if (config->emit_delimiter) {
+                ev->keycode = config->delimiter_keycode;
+                ev->implicit_modifiers = config->delimiter_mods;
+                if (ev->state && config->capitalize_words) {
                     data->shift_next = true;
                 }
-                return ZMK_EV_EVENT_HANDLED;
-            case CASE_MODE_KEBAB:
-                ev->keycode = HID_USAGE_KEY_KEYBOARD_MINUS_AND_UNDERSCORE;
-                break;
-            default:
-                LOG_WRN("Unknown case mode %d, deactivating", config->mode);
-                deactivate_case_mode(dev);
                 return ZMK_EV_EVENT_BUBBLE;
             }
 
-            return ZMK_EV_EVENT_BUBBLE;
+            // No delimiter emitted (e.g. camelCase) — just flag next letter
+            if (ev->state && config->capitalize_words) {
+                data->shift_next = true;
+            }
+            return ZMK_EV_EVENT_HANDLED;
         }
 
         if (!ev->state) {
             continue;
         }
 
-        if (data->shift_next && case_mode_is_alpha(ev->usage_page, ev->keycode)) {
-            ev->implicit_modifiers |= MOD_LSFT;
-            data->shift_next = false;
-            return ZMK_EV_EVENT_BUBBLE;
+        // Alpha keys: apply shift if needed
+        if (case_mode_is_alpha(ev->usage_page, ev->keycode)) {
+            if (config->capitalize_all || data->shift_next) {
+                ev->implicit_modifiers |= MOD_LSFT;
+                data->shift_next = false;
+            }
+            continue;
         }
 
-        if (data->shift_next && !case_mode_is_alpha(ev->usage_page, ev->keycode)) {
-            data->shift_next = false;
-        }
+        // Non-alpha press: clear pending shift
+        data->shift_next = false;
 
-        if (!case_mode_is_alpha(ev->usage_page, ev->keycode) &&
-            !case_mode_is_in_continue_list(config, ev->usage_page, ev->keycode,
+        // Deactivate if not in continue list
+        if (!case_mode_is_in_continue_list(config, ev->usage_page, ev->keycode,
                                            ev->implicit_modifiers)) {
             LOG_DBG("Deactivating case_mode for 0x%02X - 0x%02X", ev->usage_page, ev->keycode);
             deactivate_case_mode(dev);
@@ -208,15 +204,18 @@ static int case_mode_keycode_state_changed_listener(const zmk_event_t *eh) {
 
 #define CONTINUE_ITEM(i, n) PARSE_CONTINUE(DT_INST_PROP_BY_IDX(n, continue_list, i))
 
-#define CASE_MODE_TYPE(n) ((enum case_mode_type)DT_INST_PROP(n, mode))
-
 #define HAS_CONTINUE_LIST(n) DT_INST_NODE_HAS_PROP(n, continue_list)
 
 #define CASE_MODE_INST(n)                                                                          \
     static struct behavior_case_mode_data behavior_case_mode_data_##n = {                          \
         .active = false, .shift_next = false};                                                     \
     static const struct behavior_case_mode_config behavior_case_mode_config_##n = {                \
-        .mode = CASE_MODE_TYPE(n),                                                                 \
+        .delimiter_keycode = ZMK_HID_USAGE_ID(DT_INST_PROP(n, delimiter)),                         \
+        .delimiter_mods = SELECT_MODS(DT_INST_PROP(n, delimiter)),                                 \
+        .emit_delimiter = DT_INST_PROP(n, emit_delimiter),                                         \
+        .capitalize_words = DT_INST_PROP(n, capitalize_words),                                     \
+        .capitalize_first = DT_INST_PROP(n, capitalize_first),                                     \
+        .capitalize_all = DT_INST_PROP(n, capitalize_all),                                         \
         .continuations_count = COND_CODE_1(HAS_CONTINUE_LIST(n),                                   \
                                            (DT_INST_PROP_LEN(n, continue_list)), (0)),             \
         .continuations = {COND_CODE_1(HAS_CONTINUE_LIST(n),                                        \

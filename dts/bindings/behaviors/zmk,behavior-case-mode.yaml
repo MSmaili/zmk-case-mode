@@ -2,26 +2,49 @@
 # SPDX-License-Identifier: MIT
 
 description: |
-  Case mode behavior. Intercepts space and replaces it with a delimiter
-  depending on the mode: underscore (snake_case), suppress+shift (camelCase),
-  or hyphen (kebab-case).
+  Case mode behavior. Intercepts space and replaces it with a configurable
+  delimiter or capitalizes the next letter, enabling typing in various
+  case styles (snake_case, camelCase, PascalCase, kebab-case, etc.).
 
 compatible: "zmk,behavior-case-mode"
 include: zero_param.yaml
 
 properties:
+  delimiter:
+    type: int
+    required: false
+    default: 0
+    description: |
+      Keycode to emit when space is pressed (e.g. underscore, hyphen, dot).
+      Ignored when emit-delimiter is false.
+  emit-delimiter:
+    type: boolean
+    required: false
+    default: false
+    description: |
+      Whether to emit the delimiter keycode on space. When false, space is
+      swallowed (used for camelCase/PascalCase).
+  capitalize-words:
+    type: boolean
+    required: false
+    default: false
+    description: |
+      Capitalize the first letter of each word (after space).
+  capitalize-first:
+    type: boolean
+    required: false
+    default: false
+    description: |
+      Capitalize the very first letter after activation.
+  capitalize-all:
+    type: boolean
+    required: false
+    default: false
+    description: |
+      Capitalize every letter (for SCREAMING styles).
   continue-list:
     type: array
     required: false
     description: |
       List of extra keycodes which do not deactivate case mode.
-      Alphanumeric characters are always included.
-  mode:
-    type: int
-    enum:
-      - 0
-      - 1
-      - 2
-    required: true
-    description: |
-      The case mode type. 0 = snake, 1 = camel, 2 = kebab.
+      Alpha characters (A-Z) are always included.
