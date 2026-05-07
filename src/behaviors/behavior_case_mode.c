@@ -102,12 +102,6 @@ static bool case_mode_is_alpha(uint16_t usage_page, uint8_t usage_id) {
            usage_id <= HID_USAGE_KEY_KEYBOARD_Z;
 }
 
-static bool case_mode_is_numeric(uint16_t usage_page, uint8_t usage_id) {
-    return usage_page == HID_USAGE_KEY &&
-           usage_id >= HID_USAGE_KEY_KEYBOARD_1_AND_EXCLAMATION &&
-           usage_id <= HID_USAGE_KEY_KEYBOARD_0_AND_RIGHT_PARENTHESIS;
-}
-
 static bool case_mode_is_space(uint16_t usage_page, uint8_t keycode) {
     return usage_page == HID_USAGE_KEY && keycode == HID_USAGE_KEY_KEYBOARD_SPACEBAR;
 }
@@ -199,7 +193,6 @@ static int case_mode_keycode_state_changed_listener(const zmk_event_t *eh) {
         }
 
         if (!case_mode_is_alpha(ev->usage_page, ev->keycode) &&
-            !case_mode_is_numeric(ev->usage_page, ev->keycode) &&
             !case_mode_is_in_continue_list(config, ev->usage_page, ev->keycode,
                                            ev->implicit_modifiers)) {
             LOG_DBG("Deactivating case_mode for 0x%02X - 0x%02X", ev->usage_page, ev->keycode);
