@@ -14,7 +14,6 @@
 #include <zmk/event_manager.h>
 #include <zmk/events/keycode_state_changed.h>
 #include <zmk/hid.h>
-#include <zmk/keymap.h>
 #include <zmk/keys.h>
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
@@ -154,7 +153,7 @@ static int case_mode_keycode_state_changed_listener(const zmk_event_t *eh) {
             continue;
         }
 
-        // Space → delimiter handling
+        // Space: delimiter handling
         if (case_mode_is_space(ev->usage_page, ev->keycode)) {
             if (config->emit_delimiter) {
                 ev->keycode = config->delimiter_keycode;
@@ -165,7 +164,7 @@ static int case_mode_keycode_state_changed_listener(const zmk_event_t *eh) {
                 return ZMK_EV_EVENT_BUBBLE;
             }
 
-            // No delimiter emitted (e.g. camelCase) — just flag next letter
+            // No delimiter emitted (e.g. camelCase) - just flag next letter
             if (ev->state && config->capitalize_words) {
                 data->shift_next = true;
             }
@@ -182,7 +181,7 @@ static int case_mode_keycode_state_changed_listener(const zmk_event_t *eh) {
                 ev->implicit_modifiers |= MOD_LSFT;
                 data->shift_next = false;
             }
-            continue;
+            break;
         }
 
         // Non-alpha press: clear pending shift
@@ -194,6 +193,7 @@ static int case_mode_keycode_state_changed_listener(const zmk_event_t *eh) {
             LOG_DBG("Deactivating case_mode for 0x%02X - 0x%02X", ev->usage_page, ev->keycode);
             deactivate_case_mode(dev);
         }
+        break;
     }
 
     return ZMK_EV_EVENT_BUBBLE;
