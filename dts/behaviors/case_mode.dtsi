@@ -6,6 +6,8 @@
 
 #include <dt-bindings/zmk/keys.h>
 
+#define CASE_MODE_DEFAULT_CONTINUE N1 N2 N3 N4 N5 N6 N7 N8 N9 N0 BACKSPACE
+
 / {
     behaviors {
         /omit-if-no-ref/ case_snake: case_snake {
@@ -13,14 +15,14 @@
             #binding-cells = <0>;
             delimiter = <UNDERSCORE>;
             emit-delimiter;
-            continue-list = <N1 N2 N3 N4 N5 N6 N7 N8 N9 N0>;
+            continue-list = <CASE_MODE_DEFAULT_CONTINUE>;
         };
 
         /omit-if-no-ref/ case_camel: case_camel {
             compatible = "zmk,behavior-case-mode";
             #binding-cells = <0>;
             capitalize-words;
-            continue-list = <N1 N2 N3 N4 N5 N6 N7 N8 N9 N0>;
+            continue-list = <CASE_MODE_DEFAULT_CONTINUE>;
         };
 
         /omit-if-no-ref/ case_pascal: case_pascal {
@@ -28,7 +30,7 @@
             #binding-cells = <0>;
             capitalize-words;
             capitalize-first;
-            continue-list = <N1 N2 N3 N4 N5 N6 N7 N8 N9 N0>;
+            continue-list = <CASE_MODE_DEFAULT_CONTINUE>;
         };
 
         /omit-if-no-ref/ case_kebab: case_kebab {
@@ -36,7 +38,7 @@
             #binding-cells = <0>;
             delimiter = <MINUS>;
             emit-delimiter;
-            continue-list = <N1 N2 N3 N4 N5 N6 N7 N8 N9 N0>;
+            continue-list = <CASE_MODE_DEFAULT_CONTINUE>;
         };
 
         /omit-if-no-ref/ case_screaming: case_screaming {
@@ -45,7 +47,7 @@
             delimiter = <UNDERSCORE>;
             emit-delimiter;
             capitalize-all;
-            continue-list = <N1 N2 N3 N4 N5 N6 N7 N8 N9 N0>;
+            continue-list = <CASE_MODE_DEFAULT_CONTINUE>;
         };
     };
 };
